@@ -53,9 +53,8 @@ package.json
 /src/
 
 
-# Ignorar las carpetas pesadas que están en la raíz
-/server/
-/python/
-/nssm/
+server/
+python/
+nssm/
 *.exe
 *.dll

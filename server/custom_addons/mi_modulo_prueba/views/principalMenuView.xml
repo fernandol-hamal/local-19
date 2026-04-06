@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+
+    <record id="view_clinica_dashboard_form" model="ir.ui.view">
+        <field name="name">clinica.dashboard.form</field>
+        <field name="model">clinica.dashboard</field>
+        <field name="arch" type="xml">
+            <form create='0' delete='0' edit='0'>
+                <sheet>
+                <style>
+                       
+                        .btn-dashboard {
+                            width: 100%;
+                            height: 150px;
+                            font-size: 24px !important;
+                            border-radius: 15px !important;
+                            margin-bottom: 20px;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            transition: transform 0.2s;
+                            border: none;
+                            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+                        }
+                        .btn-dashboard:hover {
+                            transform: scale(1.05);
+                        }
+                        .btn-pacientes { background-color: #00A09D; color: white; }
+                        .btn-citas { background-color: #FF7F50; color: white; }
+                        .btn-reportes { background-color: #6A5ACD; color: white; }
+                        .btn-config { background-color: #607D8B; color: white; }
+                    </style>
+                    <h1 class="text-center mb-5" style="color: #333;">Bienvenido a la Clínica</h1>
+
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <button type="action" 
+                                        name="%(mi_modulo_prueba.action_historia_paciente)d" 
+                                        class="btn btn-dashboard btn-pacientes" 
+                                        icon="fa-user-md" 
+                                        string=" Historias Clínicas"/>
+                            </div>
+
+                            <div class="col-md-6">
+                                <button type="object" 
+                                        name="dummy_method" 
+                                        class="btn btn-dashboard btn-citas" 
+                                        icon="fa-calendar" 
+                                        string=" Agenda de Citas"/>
+                            </div>
+
+                            <div class="col-md-6">
+                                <button type="action" 
+                                        name="%(mi_modulo_prueba.action_pacientes)d" 
+                                        class="btn btn-dashboard btn-reportes" 
+                                        icon="fa-bar-chart" 
+                                        string="Pacientes"/>
+                            </div>
+
+                            <div class="col-md-6">
+                                <button type="object" 
+                                        name="dummy_method" 
+                                        class="btn btn-dashboard btn-config" 
+                                        icon="fa-cogs" 
+                                        string=" Configuración"/>
+                            </div>
+                        </div>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_clinica_dashboard_main" model="ir.actions.act_window">
+        <field name="name">Inicio</field>
+        <field name="res_model">clinica.dashboard</field>
+        <field name="view_mode">form</field>
+        <field name="res_id" eval="ref('registro_dashboard_inicial')"/>
+    </record>
+
+    <menuitem id="menu_clinica_root" 
+              name="Clínica" 
+              action="action_clinica_dashboard_main" 
+              sequence="1"/>
+</odoo>
