@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="seq_historia_odontologica" model="ir.sequence">
+            <field name="name">Secuencia de Historia Clínica del paciente</field>
+            <field name="code">historia.paciente</field>
+            <field name="prefix">HP-</field>
+            <field name="padding">5</field>
+            <field name="number_next">1</field>
+            <field name="number_increment">1</field>
+        </record>
+        <record id="seq_paciente_historial_clinica" model="ir.sequence">
+            <field name="name">Secuencia del registro de cada paciente</field>
+            <field name="code">pacientes</field>
+            <field name="prefix">PAC-</field>
+            <field name="padding">5</field>
+            <field name="number_next">1</field>
+            <field name="number_increment">1</field>
+        </record>
+        <record id="registro_dashboard_inicial" model="clinica.dashboard">
+            <field name="name">Menú Principal</field>
+        </record>
+        
+    </data>
+</odoo>
