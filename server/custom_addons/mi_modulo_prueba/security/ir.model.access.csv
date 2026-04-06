@@ -4,5 +4,3 @@ access_odontograma_linea,odontograma.linea,model_odontograma_linea,base.group_us
 access_tratamiento_historia,tratamiento.historia,model_tratamiento_historia,base.group_user,1,1,1,1
 access_clinica_dashboard,clinica.dashboard,model_clinica_dashboard,base.group_user,1,1,1,1
 access_pacientes,pacientes,model_pacientes,base.group_user,1,1,1,1
-access_jira_synchro,jira.synchro,model_jira_synchro,base.group_user,1,1,1,1
-access_excel_import,excel.timesheet.import,model_excel_timesheet_import,base.group_user,1,1,1,1

@@ -1,19 +1,10 @@
+# __manifest__.py
 {
     'name': 'History Of patients',
-    'version': '1.0.1',
+    'version': '1.0',
     'author': 'Hammal Solutions',
-    'summary': 'Gestión de pacientes y sincronización Jira',
-    'depends': ['base', 'web', 'iap', 'mail', 'project','hr_timesheet'], 
-    'data': [
-        'security/ir.model.access.csv',
-        'views/odontograma_view.xml',
-        'views/pacientesView.xml',
-        'views/views.xml',
-        'views/jira_project_view.xml',
-        'data/data.xml',
-        'data/estadosVenezuela.xml',
-        'views/principalMenuView.xml',
-    ],
+    # CAMBIO AQUÍ: Agregamos 'web'
+    'depends': ['base', 'web','iap','mail'], 
     'assets': {
         'web.assets_backend': [
             'mi_modulo_prueba/static/src/css/odontograma.css',
@@ -24,6 +15,15 @@
             'mi_modulo_prueba/static/src/xml/audio_recorder.xml',
         ],
     },
+    'data': [
+        'security/ir.model.access.csv',
+        'views/odontograma_view.xml',
+        'views/pacientesView.xml',
+        'views/views.xml',
+        'data/data.xml',
+        'data/estadosVenezuela.xml',
+        'views/principalMenuView.xml',
+    ],
     'installable': True,
     'application': True,
     'license': 'LGPL-3',
