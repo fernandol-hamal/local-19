@@ -87,8 +87,9 @@
                     </group>
 
                     <field name="examenHecho" 
-                           placeholder="Aquí aparecerá la transcripción y el resumen de la consulta una vez procesado por la IA..." 
-                           style="min-height: 100px; margin-top: 15px;"/>
+                        widget="audio_recorder"
+                        placeholder="Aquí aparecerá la transcripción y el resumen de la consulta una vez procesado por la IA..." 
+                        style="min-height: 100px; margin-top: 15px;"/>
                     
                     <div class="mt-2 mb-4">
                         <button name="action_completar_con_ia" 
