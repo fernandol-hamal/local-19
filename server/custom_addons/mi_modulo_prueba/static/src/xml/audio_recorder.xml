@@ -1,28 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="mi_modulo_prueba.AudioRecorderField">
-        <div class="o_field_widget w-100">
-            <div class="d-flex align-items-center mb-2 p-3 rounded" 
-                 t-attf-style="background: #{state.isRecording ? '#064e3b' : (state.isListening ? '#1e3a8a' : '#111827')}; border: 1px solid #334155;">
+        <div class="o_field_widget o_field_audio_recorder w-100">
+            <div class="d-flex align-items-center p-2 mb-1 rounded border-0" 
+                 t-attf-style="background-color: #111827; transition: all 0.3s ease;">
+                
                 <button type="button" 
-                        t-attf-class="btn rounded-circle me-3"
-                        t-attf-style="width: 45px; height: 45px; background: #{state.isRecording ? '#10b981' : '#3b82f6'}; color: white; border: none;"
+                        t-attf-class="btn rounded-circle d-flex align-items-center justify-content-center"
+                        t-attf-style="width: 34px; height: 34px; background: #{state.isListening ? (state.isRecording ? '#714B67' : '#059669') : '#374151'}; color: white; border: none;"
                         t-on-click="toggleMicrophone">
-                    <i t-attf-class="fa #{state.isListening ? 'fa-stop' : 'fa-microphone'}"></i>
+                    <i t-attf-class="fa #{state.isListening ? (state.isRecording ? 'fa-microphone' : 'fa-pause') : 'fa-microphone'}"></i>
                 </button>
-                <div class="flex-grow-1">
-                    <div class="fw-bold text-white small">
-                        <t t-if="!state.isListening">SISTEMA APAGADO</t>
-                        <t t-elif="!state.isRecording">DIGA "HOLA" PARA ACTIVAR</t>
-                        <t t-else="">GRABANDO CONSULTA...</t>
+
+                <div class="flex-grow-1 ms-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span style="font-size: 0.65rem; font-weight: 600; color: #9ca3af;">
+                            <t t-if="!state.isListening">SISTEMA OFF</t>
+                            <t t-elif="!state.isRecording">ESCUCHANDO "HOLA"...</t>
+                            <t t-else="" style="color: #a78bfa;">RECIBIENDO DICTADO</t>
+                        </span>
+                        
+                        <div t-if="state.isRecording" class="denty-wave-container">
+                            <div class="denty-wave"></div>
+                            <div class="denty-wave"></div>
+                            <div class="denty-wave"></div>
+                        </div>
                     </div>
-                    <div class="text-info small"><t t-esc="state.interimText"/></div>
+                    <div class="text-truncate" style="height: 1.1em; color: #60a5fa; font-size: 0.7rem; font-style: italic;">
+                        <t t-esc="state.interimText"/>
+                    </div>
                 </div>
             </div>
-            <textarea class="o_input w-100 p-3" 
+
+            <textarea class="o_input w-100 p-2 mt-1" 
                       t-att-name="props.name"
                       t-att-value="props.record.data[props.name] || ''"
-                      style="background: #0f172a; color: #f8fafc; border-radius: 8px; min-height: 150px;"/>
+                      t-on-input="(ev) => this.props.record.update({ [this.props.name]: ev.target.value })"
+                      placeholder="Los detalles aparecerán aquí..."
+                      t-attf-style="background-color: #0f172a; color: #f8fafc; border: 1px solid #1e293b; border-radius: 4px; min-height: 100px; resize: vertical; outline: none;"/>
         </div>
     </t>
 </templates>

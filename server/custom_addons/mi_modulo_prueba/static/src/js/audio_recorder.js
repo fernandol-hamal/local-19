@@ -19,12 +19,10 @@ export class AudioRecorderField extends Component {
   }
 
   async toggleMicrophone() {
-    // Si ya está escuchando, lo apagamos
     if (this.state.isListening) {
       this.stopAll();
       return;
     }
-
     try {
       const apiKey = await rpc("/web/dataset/call_kw", {
         model: "ir.config_parameter",
@@ -32,16 +30,9 @@ export class AudioRecorderField extends Component {
         args: ["denty.deepgram.api_key"],
         kwargs: {},
       });
-
-      if (apiKey) {
-        await this.startDeepgram(apiKey.trim());
-      } else {
-        alert(
-          "Error: No se encontró la API Key en Ajustes > Parámetros del sistema.",
-        );
-      }
-    } catch (error) {
-      console.error("Error al obtener API Key:", error);
+      if (apiKey) await this.startDeepgram(apiKey.trim());
+    } catch (e) {
+      console.error("Error API:", e);
     }
   }
 
@@ -50,41 +41,44 @@ export class AudioRecorderField extends Component {
     this.socket = new WebSocket(url, ["token", apiKey]);
 
     this.socket.onopen = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-        });
-        this.mediaRecorder = new MediaRecorder(stream, {
-          mimeType: "audio/webm",
-        });
-        this.mediaRecorder.ondataavailable = (e) => {
-          if (e.data.size > 0 && this.socket?.readyState === 1) {
-            this.socket.send(e.data);
-          }
-        };
-        this.mediaRecorder.start(250);
-        this.state.isListening = true;
-      } catch (err) {
-        console.error("No se pudo acceder al micro:", err);
-        this.stopAll();
-      }
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.mediaRecorder = new MediaRecorder(stream, {
+        mimeType: "audio/webm",
+      });
+      this.mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0 && this.socket?.readyState === 1)
+          this.socket.send(e.data);
+      };
+      this.mediaRecorder.start(250);
+      this.state.isListening = true;
     };
 
     this.socket.onmessage = (message) => {
       const received = JSON.parse(message.data);
       let transcript = received.channel.alternatives[0].transcript;
 
+      // FILTRO DE RUIDO TÉCNICO (Borra el error de "bytes")
       if (
         !transcript ||
-        transcript.includes("bytes") ||
+        transcript.toLowerCase().includes("bytes") ||
         transcript.match(/^\d+\.\d+/)
       )
         return;
 
-      const transcriptLower = transcript.toLowerCase().trim();
+      const text = transcript.toLowerCase().trim();
 
-      if (!this.state.isRecording && transcriptLower.includes("hola")) {
+      // COMANDOS DE CONTROL
+      if (!this.state.isRecording && text.includes("hola")) {
         this.state.isRecording = true;
+        return;
+      }
+      if (this.state.isRecording && text.includes("pausa")) {
+        this.state.isRecording = false;
+        this.state.interimText = "⏸️ PAUSADO";
+        return;
+      }
+      if (text.includes("terminar")) {
+        this.stopAll();
         return;
       }
 
@@ -92,7 +86,7 @@ export class AudioRecorderField extends Component {
         if (received.is_final) {
           this.state.interimText = "";
           this.updateOdooValue(transcript);
-          this.extractDataAndFill(transcriptLower);
+          this.extractDataAndFill(text);
         } else {
           this.state.interimText = transcript;
         }
@@ -100,27 +94,23 @@ export class AudioRecorderField extends Component {
     };
 
     this.socket.onclose = () => this.stopAll();
-    this.socket.onerror = () => this.stopAll();
   }
 
   updateOdooValue(text) {
-    const prevValue = this.props.record.data[this.props.name] || "";
-    this.props.record.update({
-      [this.props.name]: (prevValue + " " + text).trim(),
-    });
+    const fieldName = this.props.name;
+    const prevValue = this.props.record.data[fieldName] || "";
+    // Aseguramos que sea String puro para evitar el error de binascii Incorrect Padding
+    const newValue = (prevValue + " " + text).replace(/\s+/g, " ").trim();
+    this.props.record.update({ [fieldName]: String(newValue) });
   }
 
   extractDataAndFill(text) {
-    const dataToUpdate = {};
-
-    // Mapeo de Especialidades (tipServ)
-    const especialidadesMap = {
+    const data = {};
+    const espMap = {
       general: "general",
       ortodoncia: "ortodoncia",
-      brackets: "ortodoncia",
       endodoncia: "endodoncia",
       periodoncia: "periodoncia",
-      odontopediatría: "odontopediatria",
       niños: "odontopediatria",
       cirugía: "cirugia",
       implantes: "implantologia",
@@ -128,22 +118,19 @@ export class AudioRecorderField extends Component {
       estética: "estetica",
       diagnóstico: "diagnostico",
     };
-
     if (text.includes("especialidad")) {
-      for (let key in especialidadesMap) {
+      for (let key in espMap) {
         if (text.includes(key)) {
-          dataToUpdate.tipServ = especialidadesMap[key];
+          data.tipServ = espMap[key];
           break;
         }
       }
     }
-
-    // Consultorio
-    const consultorioMatch = text.match(
+    const conMatch = text.match(
       /consultorio\s*(\d+|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)/,
     );
-    if (consultorioMatch) {
-      const wordToNum = {
+    if (conMatch) {
+      const w2n = {
         uno: 1,
         dos: 2,
         tres: 3,
@@ -155,14 +142,10 @@ export class AudioRecorderField extends Component {
         nueve: 9,
         diez: 10,
       };
-      let val = consultorioMatch[1];
-      const finalNum = wordToNum[val] || parseInt(val);
-      if (!isNaN(finalNum)) dataToUpdate.consultorio = finalNum;
+      data.consultorio = w2n[conMatch[1]] || parseInt(conMatch[1]);
     }
-
-    // Fecha (fechaHistoria)
     if (text.includes("fecha")) {
-      const months = {
+      const meses = {
         enero: "01",
         febrero: "02",
         marzo: "03",
@@ -176,22 +159,18 @@ export class AudioRecorderField extends Component {
         noviembre: "11",
         diciembre: "12",
       };
-      const match = text.match(/(\d{1,2})\s*de\s*([a-z]+)/);
-      if (match && months[match[2]]) {
-        const dateStr = `${new Date().getFullYear()}-${months[match[2]]}-${match[1].padStart(2, "0")}`;
-        dataToUpdate.fechaHistoria = deserializeDate(dateStr);
+      const fMatch = text.match(/(\d{1,2})\s*de\s*([a-z]+)/);
+      if (fMatch && meses[fMatch[2]]) {
+        data.fechaHistoria = deserializeDate(
+          `${new Date().getFullYear()}-${meses[fMatch[2]]}-${fMatch[1].padStart(2, "0")}`,
+        );
       }
     }
-
-    // Motivo
     if (text.includes("motivo")) {
-      const parts = text.split("motivo");
-      if (parts[1]) dataToUpdate.motivo = parts[1].replace(/^es\s*/, "").trim();
+      const p = text.split("motivo");
+      if (p[1]) data.motivo = p[1].replace(/^es\s*/, "").trim();
     }
-
-    if (Object.keys(dataToUpdate).length > 0) {
-      this.props.record.update(dataToUpdate);
-    }
+    if (Object.keys(data).length > 0) this.props.record.update(data);
   }
 
   stopAll() {

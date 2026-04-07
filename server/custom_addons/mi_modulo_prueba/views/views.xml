@@ -79,17 +79,15 @@
                     </group>
                     
                     <separator string="Asistente de Voz IA (Grabar Consulta)"/>
-                    <p class="text-muted mb-3">Presione el micrófono para grabar la consulta médica. La IA extraerá los datos y generará el resumen escrito.</p>
+                    <p class="text-muted mb-3">Presione el micrófono para dictar la consulta. La IA completará los campos automáticamente.</p>
                     
-                    <!-- AQUI USAMOS EL NUEVO WIDGET CREADO -->
                     <group>
-                        <field name="audio_file" widget="audio_recorder" nolabel="1"/>
+                        <field name="transcripcion_vocal" widget="audio_recorder" nolabel="1" placeholder="Haga clic en el micro para empezar a hablar..."/>
                     </group>
 
                     <field name="examenHecho" 
-                        widget="audio_recorder"
-                        placeholder="Aquí aparecerá la transcripción y el resumen de la consulta una vez procesado por la IA..." 
-                        style="min-height: 100px; margin-top: 15px;"/>
+                           placeholder="Aquí aparecerá el resumen estructurado por la IA..." 
+                           style="min-height: 100px; margin-top: 15px;"/>
                     
                     <div class="mt-2 mb-4">
                         <button name="action_completar_con_ia" 
@@ -97,7 +95,7 @@
                                 type="object" 
                                 class="btn-primary" 
                                 icon="fa-magic"
-                                confirm="¿Procesar grabación y autocompletar la historia clínica?"/>
+                                confirm="¿Procesar el dictado y autocompletar la historia clínica?"/>
                     </div>
 
                     <separator string="ODONTOGRAMA" class="mt-4 mb-3 text-primary h4"/>

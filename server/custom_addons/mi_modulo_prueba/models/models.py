@@ -49,9 +49,10 @@ class HistoriaPaciente(models.Model):
     fechaHistoria = fields.Date(string='Fecha', required=True, default=fields.Date.context_today)
     motivo = fields.Char(string='Motivo', required=False)
     
-    # --- CAMPO DONDE SE GUARDARÁ EL AUDIO DEL BOTON ---
-    audio_file = fields.Binary(string='Audio de Consulta', attachment=True)
-    
+    # --- CAMPO DE TEXTO PARA EL DICTADO ---
+    # En el XML usa: <field name="transcripcion_vocal" widget="audio_recorder"/>
+    transcripcion_vocal = fields.Text(string='Transcripción en vivo')
+
     examenHecho = fields.Text(string='Evaluación Médica realizada')
 
     tratamiento_ids = fields.One2many('tratamiento.historia', 'historia_id', string='Tratamientos')
@@ -67,56 +68,49 @@ class HistoriaPaciente(models.Model):
     def action_completar_con_ia(self):
         self.ensure_one()
         
-        if not self.examenHecho and not self.audio_file:
-            raise UserError("Grabe un audio o escriba la evaluación médica antes de continuar.")
+        # Validamos que exista texto para procesar
+        if not self.transcripcion_vocal and not self.examenHecho:
+            raise UserError("No hay información dictada o escrita para procesar.")
 
         api_key = self.env['ir.config_parameter'].sudo().get_param('gemini.api_key')
         if not api_key:
             raise UserError("Falta la clave 'gemini.api_key' en Parámetros del Sistema.")
 
-        model_id = "gemini-2.5-flash"
+        # Usamos el modelo flash 1.5 que es el más estable para este tipo de tareas
+        model_id = "gemini-1.5-flash"
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:generateContent?key={api_key}"
         
         valid_services = [opt[0] for opt in self._fields['tipServ'].selection]
         
         prompt = f"""Analiza la siguiente evaluación médica odontológica. 
-        Si recibes un audio, escúchalo, transcríbelo y extrae la información clínica.
-        Responde exclusivamente con un JSON plano con la siguiente estructura (NO AGREGUES MARKDOWN NI TEXTO ADICIONAL): 
-        {{"tipServ": "uno de: {valid_services}", "motivo": "resumen corto", "fechaHistoria": "YYYY-MM-DD", "consultorio": "numero", "examenHecho": "Transcripción exacta del audio o resumen detallado"}}.
+        Responde exclusivamente con un JSON plano con esta estructura: 
+        {{"tipServ": "uno de: {valid_services}", "motivo": "resumen corto", "fechaHistoria": "YYYY-MM-DD", "consultorio": "numero", "examenHecho": "Transcripción o resumen detallado"}}.
         Hoy es {datetime.date.today()}."""
 
-        parts = [{"text": prompt}]
-
-        if self.examenHecho:
-            parts.append({"text": f"Texto adicional proporcionado: '{self.examenHecho}'"})
-
-        if self.audio_file:
-            audio_b64 = self.audio_file.decode('utf-8') if isinstance(self.audio_file, bytes) else self.audio_file
-            # El navegador graba en webm por defecto
-            parts.append({
-                "inline_data": {
-                    "mime_type": "audio/webm",
-                    "data": audio_b64
-                }
-            })
+        # Combinamos lo dictado por voz y lo escrito manualmente
+        texto_medico = f"Dictado por voz: {self.transcripcion_vocal or ''}. Notas manuales: {self.examenHecho or ''}"
 
         try:
-            payload = {"contents":[{"parts": parts}]}
+            payload = {
+                "contents": [{
+                    "parts": [
+                        {"text": prompt},
+                        {"text": texto_medico}
+                    ]
+                }]
+            }
             response = requests.post(url, json=payload, timeout=30) 
             
-            if response.status_code == 404:
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
-                response = requests.post(url, json=payload, timeout=30)
-
             if response.status_code != 200:
                 raise UserError(f"Error AI ({response.status_code}): {response.text}")
 
             result = response.json()
             ia_text = result['candidates'][0]['content']['parts'][0]['text']
             
+            # Limpiamos el JSON de posibles bloques de código markdown
             match = re.search(r'\{.*\}', ia_text, re.DOTALL)
             if not match:
-                raise UserError("La IA no devolvió un formato JSON válido.")
+                raise UserError("La IA no pudo estructurar la información correctamente.")
             
             data = json.loads(match.group())
             vals = {}
@@ -163,7 +157,6 @@ class OdontogramaLinea(models.Model):
         ('c4', 'Izquierda'), ('c5', 'Centro')
     ], string='Ubicación')
     notas = fields.Text(string='Notas')
-
 
 class ClinicaDashBorard(models.Model):
     _name = 'clinica.dashboard'
